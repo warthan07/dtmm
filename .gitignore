@@ -29,3 +29,6 @@ doc/_build
 doc/__pycache__
 *.raw
 *.raw
+examples/.DS_Store
+examples/.DS_Store
+.DS_Store
