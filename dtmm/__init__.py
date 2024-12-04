@@ -1,7 +1,7 @@
 """Diffractive transfer matrix method
 """
 
-__version__ = "0.7.0.dev"
+__version__ = "0.7.1"
 
 import dtmm.conf
 import numpy as np
