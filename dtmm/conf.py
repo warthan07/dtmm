@@ -144,6 +144,8 @@ NUMBA_INSTALLED = is_module_installed("numba")
 MKL_FFT_INSTALLED = is_module_installed("mkl_fft")
 SCIPY_INSTALLED = is_module_installed("scipy")
 PYFFTW_INSTALLED = is_module_installed("pyfftw")
+MLX_INSTALLED = is_module_installed("mlx")
+
 
 BETAMAX = _readconfig(config.getfloat, "core", "betamax", 0.8)
 SMOOTH = _readconfig(config.getfloat, "core", "smooth", 0.1)
@@ -582,6 +584,9 @@ def set_fftlib(name = "numpy.fft"):
             warnings.warn("Pyfftw is not installed so it can not be used! Please install pyfftw.")            
     elif name == "numpy.fft" or name == "numpy":
         DTMMConfig.fftlib = "numpy"
+        
+    elif name == "mlx.core" or name == "mlx":
+        DTMMConfig.fftlib = "mlx"
     else:
         raise ValueError("Unsupported fft library!")
     return out    

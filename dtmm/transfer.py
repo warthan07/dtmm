@@ -75,7 +75,7 @@ def normalize_field(field, intensity_in, intensity_out, out = None):
     fact = (intensity_in/intensity_out)[...,None,:,:]
     fact[fact<=-1] = -1
     fact[fact>=1] = 1
-    fact = np.abs(fact)
+    fact = np.abs(fact)#**0.5
     return np.multiply(field,fact, out = out) 
 
 
@@ -806,6 +806,7 @@ def transfer_4x4(field_data, optical_data, beta = 0.,
     if npass > 1:
         pin_mat = projection_matrix(field.shape[-2:], ks,  epsv = refind2eps([nin]*3), mode = +1, betamax = betamax)
         pout_mat = projection_matrix(field.shape[-2:], ks,  epsv = refind2eps([nout]*3), mode = +1, betamax = betamax)
+        p_mat = projection_matrix(field.shape[-2:], ks,  epsv = refind2eps([nout]*3), mode = -1, betamax = betamax)
 
     
     for i in range(npass):
@@ -864,11 +865,15 @@ def transfer_4x4(field_data, optical_data, beta = 0.,
                     field = propagate_4x4_effective_3(field, ks, output_layer,output_layer_eff, 
                                 beta = beta, phi = phi, nsteps = nstep, diffraction = diffraction, 
                                 betamax = _betamax, out = out_field) 
+                    
                 
                 elif reflection ==2:
                     field = propagate_4x4_effective_2(field, ks, output_layer,output_layer_eff, 
                                 beta = beta, phi = phi, nsteps = nstep, diffraction = diffraction, 
                                 betamax = _betamax, out = out_field)
+                    #import scipy
+                    #field = scipy.ndimage.gaussian_filter(field,3,axes = (-2,-1))
+                    #out_field[...] = field
                 else:
                     field = propagate_4x4_effective_1(field, ks, output_layer,output_layer_eff, 
                                 beta = beta, phi = phi, nsteps = nstep, diffraction = diffraction, 
@@ -902,6 +907,20 @@ def transfer_4x4(field_data, optical_data, beta = 0.,
 
                     sigma = smooth*(npass-i)/(npass)
                     
+                    
+                    ffield = fft2(field)
+                    
+                    fback = dotmf(p_mat, ffield)  
+                    ffield = ifft2(fback)
+                    i0f = total_intensity(ffield)
+                    
+                    
+                    fact = (np.abs(i0f/i0))**0.5
+                    
+                    sigma_gauss = max(min(10*(fact.max()),100),1)
+                    
+                    print("fact", fact.max(), sigma_gauss)
+                    
                     if norm == "fft":
                         field = project_normalized_fft(field, pout_mat, ref = ref, out = field)
                     elif norm == "local":
@@ -923,23 +942,66 @@ def transfer_4x4(field_data, optical_data, beta = 0.,
                         print(" * Normalizing reflections.")
                      
                     sigma = smooth*(npass-i)/(npass) 
+                    #sigma = smooth*(np.exp(-i/npass))
+                    #sigma = sigma
                     
                     ffield = fft2(field, out = field)
+                    
+                    fback = dotmf(p_mat, ffield)  
+                    field = ifft2(fback)
+                    i0f = total_intensity(field)
+                    
+                    
+                    fact = (np.abs(i0/i0f))**0.5
+                    
+                    #sigma_gauss = max(min((fact.max()),100),1)
+                    
+                    #print("fact", fact.max(), sigma_gauss)
+                    
+                    sigma_gauss = 10
+                    
+                    
+                    
                     ffield = dotmf(pin_mat, ffield, out = ffield)                                        
                     ffield = denoise_fftfield(ffield, ks, nin, sigma, out = ffield)
-                    field = ifft2(field, out = ffield)
+                    field = ifft2(ffield, out = ffield)
+                    import scipy
+                    
+                    #sigma_gauss = 8
+                    
+                    
+                    field = scipy.ndimage.gaussian_filter(field,sigma_gauss,axes = (-2,-1))
+
+                    
+                    
+                    #sigma = smooth*(np.exp(-5*i/npass))
+                    
+                    
+                    #field = scipy.ndimage.gaussian_filter(field,sigma,axes = (-2,-1))
                     
                     i0f = total_intensity(field)
-                    fact = ((i0/i0f))#**0.5)
+                    fact = ((i0/i0f))**0.5
+                    
+                    
+      
                     fact = fact[...,None,None,None]
+                    
+   
+    
+                    
+
+                    
                     np.multiply(field,fact, out = field) 
                         
                     np.multiply(field_out,fact,out = field_out) 
                     np.multiply(field_in,fact,out = field_in) 
+                    
+                    
                         
                     np.subtract(field0,field, out = field)
                     
                     np.add(field_in,field,field_in)
+                    
                                                  
                     if calc_reference:
                         ref = field.copy()

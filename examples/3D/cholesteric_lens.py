@@ -8,22 +8,22 @@ dtmm.conf.set_verbose(2)
 dtmm.conf.set_betamax(0.9)
 
 #: pixel size in nm
-PIXELSIZE = 400
+PIXELSIZE = 500
 
-THICKNESS = 3 #um
+THICKNESS = 8 #um
 
-RADIUS = 30 #um
+RADIUS = 20 #um
 
 PITCH = 460/1.50/PIXELSIZE #pitch in pixelsize units
 #RADIUS = RADIUS * 1000/P
 
 
 NO = 1.5
-NE = 1.6
+NE = 1.65
 
 
 #: compute box dimensions
-NLAYERS, HEIGHT, WIDTH = 120,128,128
+NLAYERS, HEIGHT, WIDTH = 321,128,128
 #: illumination wavelengths in nm
 WAVELENGTHS = np.linspace(380,780,9)
 #: create some experimental data (stack) left-handed cholesteric
@@ -78,8 +78,10 @@ field_data_in = dtmm.illumination_data((HEIGHT, WIDTH), WAVELENGTHS, jones = jon
 
 #: transfer input light through stackt
 field_data_out = dtmm.transfer_field(field_data_in, optical_data, beta = beta, phi = 0,
-                                     diffraction = 1, method = "4x4",  smooth = 0.9,
-                                     reflection = 2,nin = 1.5, nout = 1.5,npass = 5,norm = 2)
+# %%
+                                     diffraction = 1, method = "4x4",  smooth = 0.03,
+
+                                     reflection = 2,nin = 1.5, nout = 1.5,norm = 2, npass = 75)
 
 #: visualize output field
 viewer1 = dtmm.field_viewer(field_data_out, mode = "t",n = 1.5, intensity = 0.5, focus = -20) 
