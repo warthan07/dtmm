@@ -10,7 +10,7 @@ dtmm.conf.set_betamax(0.9)
 #: pixel size in nm
 PIXELSIZE = 500
 
-THICKNESS = 8 #um
+THICKNESS = 5 #um
 
 RADIUS = 20 #um
 
@@ -81,7 +81,7 @@ field_data_out = dtmm.transfer_field(field_data_in, optical_data, beta = beta, p
 # %%
                                      diffraction = 1, method = "4x4",  smooth = 0.03,
 
-                                     reflection = 2,nin = 1.5, nout = 1.5,norm = 2, npass = 75)
+                                     reflection = 2,nin = 1.5, nout = 1.5,norm = 2, npass = 15)
 
 #: visualize output field
 viewer1 = dtmm.field_viewer(field_data_out, mode = "t",n = 1.5, intensity = 0.5, focus = -20) 
