@@ -22,57 +22,87 @@ with thicness of the cholesteric. We use 15 passes.
 import dtmm
 import numpy as np
 
+#--------------------------------------------------------------------
+# BEGIN CONFIGURATION
+#--------------------------------------------------------------------
+
+# User-settable configuration 
+
+print("Simulation info")
+print("------------------------------")
+
 # for verbose printitng
 dtmm.conf.set_verbose(2)
 
-# needs to be set high enough, must not exceed the minimum value of refractive index  
-# that we use in our layered material. Since we enter from air with n=1, we must
-# restrict beta < 1. Lowering beta may improve convergence, but it reduces resolution
+# sets the beta parameter cutoff. We must kill evanescent modes, so make sure
+# beta does not exceed the minimum material refractive index of the stack
+# Since we enter from air with n=1, we must restrict beta < 1. 
+# Lowering beta may improve convergence, but it reduces resolution
 # and accuracy of the solution.
 dtmm.conf.set_betamax(0.9)
 
-#START CONFIGURATION-----------------------------------------------
-
-#: pixel size in nm
+#: pixel size in nm. If you lower this value, make sure you increase the computation domain size
 PIXELSIZE = 200
+
+#: height and width of the compute box in pixels, 
+# increase this number for better resolution and accuracy
+HEIGHT, WIDTH = 128,128
+
+#: number of layers. Increase this number to increase the accuracy, or if you increase lens thickness
+NLAYERS = 321
+
+
+print("Compute box:", NLAYERS, HEIGHT, WIDTH)
+
+print("Sample size:", HEIGHT * PIXELSIZE/1000, "x", WIDTH * PIXELSIZE/1000, "um^2")
 
 #: lens thickness, for thicker lenses, you must increase NPASS and NLAYERS
 THICKNESS = 3 #um
 
+print("Sample thickness:", THICKNESS, "um")
+
 # radius of the curvature of the lens
 RADIUS = 20 #um
 
+print("Lens curvature:", RADIUS, "um")
+
 # cholesteric pitch, bandgap at arround 460 nm
 PITCH = 460/1.50/PIXELSIZE #pitch in pixelsize units
+
+print("Cholesteric pitch:", PITCH * PIXELSIZE, "nm")
 
 # ordinary refractive index
 NO = 1.5
 # extraordinary refractive index
 NE = 1.65
 
+print("Delta n:", NE-NO)
+
 #: refractive index of the cover material (air)
-NIN = 1. 
+NIN = 1.
 #: refractive index of the substrate material (glass)
 NOUT = 1.5
 
-#: height and width of the compute box in pixels, 
-# increase this number for better rresolution and accuracy
-HEIGHT, WIDTH = 128,128
-
-#: number of layers. Increase this number to increase the accuracy, or if you increase lens thickness
-NLAYERS = 321
-
 #: illumination wavelengths in nm
-WAVELENGTHS = np.linspace(380,780,19)
+WAVELENGTHS = np.linspace(380,780,59)
+
+print("Wavelength range:", WAVELENGTHS.min(), "-", WAVELENGTHS.max(), "nm")
+print("Num wavelengths:", len(WAVELENGTHS))
 
 #: the beta parameter of the planewave 0.0 means normal incidence
 BETA = 0.0 
 
+print("Planewave beta", BETA)
+
 #: number of light passes - number of iterations, should be an odd number
-NPASS = 7
+NPASS = 9
 
+print("Number of iterations:", NPASS)
 
-#STOP CONFIGURATION-----------------------------------------------------
+#------------------------------------------------------------------------
+# END CONFIGURATION
+#------------------------------------------------------------------------
+
 # computed parameters below, do not change these manually.
 
 # z coordinate in pixelsize units
@@ -87,7 +117,8 @@ RADIUS_PIXEL = RADIUS * 1000 / PIXELSIZE
 # total thickness iub pixel units
 THICKNESS_PIXEL = THICKNESS * 1000 / PIXELSIZE 
 
-print("Using layer thickness of ", LAYER_THICKNESS * PIXELSIZE, " nm" )
+print("Layer thickness ", LAYER_THICKNESS * PIXELSIZE, " nm" )
+print()
 
 # build coordinates meshgrid arrays
 zz,yy,xx = np.meshgrid(Z,np.linspace(-HEIGHT/2,HEIGHT/2,HEIGHT),np.linspace(-WIDTH/2,WIDTH/2,WIDTH),indexing = "ij")
@@ -141,9 +172,10 @@ field_data_out = dtmm.transfer_field(field_data_in, optical_data,
                                      diffraction = 1, # set to 1 for fast calculation
                                      method = "4x4",  #must be 4x4 
                                      smooth = 0.03, # between 0 and 1, can imporove convergence
-                                     reflection = 2, # must be 2,3 or 4.
+                                     reflection = 4, # must be 2,3 or 4.
                                      nin = NIN, 
                                      nout = NOUT,
+                                     #eff_data = [["uniaxial"]*NLAYERS],
                                      norm = 2,  # must be 2 for cholesterics
                                      npass = NPASS # must increase this value for thick samples
                                      )
