@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dtmm"
+dynamic = ["version"]
+description = "Diffractive Transfer Matrix Method"
+readme = "README.rst"
+license = "MIT"
+authors = [
+    { name = "Andrej Petelin", email = "andrej.petelin@gmail.com" },
+]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy>=1.20",
+    "numba>=0.45",
+    "matplotlib",
+    "scipy",
+]
+
+[project.urls]
+Homepage = "https://github.com/IJSComplexMatter/dtmm"
+
+[tool.hatch.version]
+path = "dtmm/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["/dtmm"]

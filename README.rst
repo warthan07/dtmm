@@ -41,7 +41,7 @@ Install with pip::
     
 or clone the latest development version and run::
 
-    $ python setup.py install
+    $ pip install . -v
 
 Documentation
 -------------
@@ -57,6 +57,3 @@ License
 -------
 
 ``dtmm`` is released under MIT license so you can use it freely. Please cite the package if you use it. See the provided DOI badge.
-
-
-

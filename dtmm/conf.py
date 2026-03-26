@@ -80,12 +80,12 @@ DTMM_CONFIG_DIR = os.path.join(HOMEDIR, ".dtmm")
 # NUMBA_CACHE_DIR = os.path.join(DTMM_CONFIG_DIR, "numba_cache")
 
 
-# if not os.path.exists(DTMM_CONFIG_DIR):
-#     try:
-#         os.makedirs(DTMM_CONFIG_DIR)
-#     except:
-#         warnings.warn("Could not create folder in user's home directory! Is it writeable?",stacklevel=2)
-#         NUMBA_CACHE_DIR = ""
+if not os.path.exists(DTMM_CONFIG_DIR):
+    try:
+        os.makedirs(DTMM_CONFIG_DIR)
+    except:
+        warnings.warn("Could not create folder in user's home directory! Is it writeable?",stacklevel=2)
+        # NUMBA_CACHE_DIR = ""
 
 #FILE_LOCK = os.path.join(DTMM_CONFIG_DIR, "lock")        
 # if os.path.exists(NUMBA_CACHE_DIR):
@@ -109,6 +109,7 @@ DTMM_CONFIG_DIR = os.path.join(HOMEDIR, ".dtmm")
 
 CONF = os.path.join(DTMM_CONFIG_DIR, "dtmm.ini")
 CONF_TEMPLATE = os.path.join(DATAPATH, "dtmm.ini")
+
 
 config = ConfigParser()
 
