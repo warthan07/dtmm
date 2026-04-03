@@ -16,8 +16,8 @@ Requirements
 
 Prior to installing, you should have a working python 3.x environment consisting of:
 
-* numba >=0.45.0
-* numpy
+* numba >= 0.45.0
+* numpy >= 1.20
 
 For matplotlib-based GUI:
 
@@ -34,7 +34,7 @@ Installing in Anaconda
 Open the terminal (command prompt) and run::
 
     $ conda install numba scipy matplotlib numba
-    $ pip install ddmm
+    $ pip install dtmm
 
 Optionally, for faster FFT computation, you can install `mkl_fft`::
 

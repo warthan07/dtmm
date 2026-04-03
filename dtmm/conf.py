@@ -80,12 +80,12 @@ DTMM_CONFIG_DIR = os.path.join(HOMEDIR, ".dtmm")
 # NUMBA_CACHE_DIR = os.path.join(DTMM_CONFIG_DIR, "numba_cache")
 
 
-# if not os.path.exists(DTMM_CONFIG_DIR):
-#     try:
-#         os.makedirs(DTMM_CONFIG_DIR)
-#     except:
-#         warnings.warn("Could not create folder in user's home directory! Is it writeable?",stacklevel=2)
-#         NUMBA_CACHE_DIR = ""
+if not os.path.exists(DTMM_CONFIG_DIR):
+    try:
+        os.makedirs(DTMM_CONFIG_DIR)
+    except:
+        warnings.warn("Could not create folder in user's home directory! Is it writeable?",stacklevel=2)
+        # NUMBA_CACHE_DIR = ""
 
 #FILE_LOCK = os.path.join(DTMM_CONFIG_DIR, "lock")        
 # if os.path.exists(NUMBA_CACHE_DIR):
@@ -109,6 +109,7 @@ DTMM_CONFIG_DIR = os.path.join(HOMEDIR, ".dtmm")
 
 CONF = os.path.join(DTMM_CONFIG_DIR, "dtmm.ini")
 CONF_TEMPLATE = os.path.join(DATAPATH, "dtmm.ini")
+
 
 config = ConfigParser()
 
@@ -144,6 +145,8 @@ NUMBA_INSTALLED = is_module_installed("numba")
 MKL_FFT_INSTALLED = is_module_installed("mkl_fft")
 SCIPY_INSTALLED = is_module_installed("scipy")
 PYFFTW_INSTALLED = is_module_installed("pyfftw")
+MLX_INSTALLED = is_module_installed("mlx")
+
 
 BETAMAX = _readconfig(config.getfloat, "core", "betamax", 0.8)
 SMOOTH = _readconfig(config.getfloat, "core", "smooth", 0.1)
@@ -176,15 +179,16 @@ else:
     NUMBA_PARALLEL = False
 
 
-
 _matplotlib_3_4_or_greater = False
-
+_matplotlib_3_7_or_greater = False
 
 try:
     import matplotlib
     major, minor = matplotlib.__version__.split(".")[0:2]
     if int(major) >= 3 and int(minor) >=4:
         _matplotlib_3_4_or_greater = True
+    if int(major) >= 3 and int(minor) >=7:
+        _matplotlib_3_7_or_greater = True        
 except:
     print("Could not determine matplotlib version you are using, assuming < 3.4")
 
@@ -498,12 +502,12 @@ class DTMMConfig(object):
         self.d_cover = _readconfig(config.getfloat, "viewer", "d_cover", 0.)
         self.immersion = _readconfig(config.getboolean, "viewer", "immersion", False)
         self.NA = _readconfig(config.getfloat, "viewer", "NA", 0.7)
-        self.cmf = _readconfig(config.get, "viewer", "cmf", "CIE1931")
+        self.cmf = _readconfig(config.get, "viewer", "cmf", "CIE1931").strip('"').strip("'")
         
         self.diffraction = _readconfig(config.getint, "transfer", "diffraction", 1)
         self.nin = _readconfig(config.getfloat, "transfer", "nin", self.n_cover)
         self.nout = _readconfig(config.getfloat, "transfer", "nout", self.n_cover)
-        self.method = _readconfig(config.get, "transfer", "method", "2x2")
+        self.method = _readconfig(config.get, "transfer", "method", "2x2").strip('"').strip("'")
         self.npass = _readconfig(config.getint, "transfer", "npass", 1)
         self.reflection = _readconfig(config.getint, "transfer", "reflection", None)
         self.eff_data = _readconfig(config.getint, "transfer", "eff_data", 0)        
@@ -581,6 +585,9 @@ def set_fftlib(name = "numpy.fft"):
             warnings.warn("Pyfftw is not installed so it can not be used! Please install pyfftw.")            
     elif name == "numpy.fft" or name == "numpy":
         DTMMConfig.fftlib = "numpy"
+        
+    elif name == "mlx.core" or name == "mlx":
+        DTMMConfig.fftlib = "mlx"
     else:
         raise ValueError("Unsupported fft library!")
     return out    

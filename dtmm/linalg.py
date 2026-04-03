@@ -1056,46 +1056,60 @@ or a less efficient general matrix multiplication.
         _dotmm4(a, b, out)
     else:
         _dotmm(a, b, out)
-#
-#@guvectorize([(NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:])],"(n,n,k,k),(n,n,k,k)->(n,n,k,k)", cache = NUMBA_CACHE, fastmath = NUMBA_FASTMATH)        
-#def bdotmm3(m1,m2, out):
-#    """Performs a dot product of two nxn block matrices of blocks 4x4.
-#    Matrices must be of shape nxnx4x4 that describe two mxm matrices
-#    (m = 4*n) of blocks of size 4x4
-#    """
-#    assert m1.shape[3] == 4
-#    
-#    tmp = np.empty(out.shape[2:],out.dtype)
-#
-#    n = m1.shape[0]    
-#    for i in prange(n):
-#        for j in range(n):
-#            for k in range(n):
-#                if k == 0:
-#                    _dotmm4(m1[i,k], m2[k,j], out[i,j] )
-#                else:
-#                    _dotmm4(m1[i,k], m2[k,j], tmp)
-#                    out[i,j] += tmp
-#
-#@njit([(NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:])], parallel = NUMBA_PARALLEL)        
-#def bdotmm2(m1,m2, out):
-#    """Performs a dot product of two nxn block matrices of blocks 4x4.
-#    Matrices must be of shape nxnx4x4 that describe two mxm matrices
-#    (m = 4*n) of blocks of size 4x4
-#    """
-#    assert m1.shape[3] == 4
-#    
-#    tmp = np.empty(out.shape[2:],out.dtype)
-#
-#    n = m1.shape[0]    
-#    for i in prange(n):
-#        for j in range(n):
-#            for k in range(n):
-#                if k == 0:
-#                    _dotmm4(m1[i,k], m2[k,j], out[i,j] )
-#                else:
-#                    _dotmm4(m1[i,k], m2[k,j], tmp)
-#                    out[i,j] += tmp
+        
+# def dotmm(a,b,out = None):
+#     a = np.asarray(a)
+#     b = np.asarray(b)
+#     shape = np.broadcast_shapes(a.shape[0:-2],b.shape[0:-2])
+#     x = np.broadcast_to(a,shape + a.shape[-2:]).copy()
+#     y = np.broadcast_to(b,shape + b.shape[-2:]).copy()
+#     if not x.data.c_contiguous: 
+#         x = x.copy()
+#     if not y.data.c_contiguous:
+#         y = y.copy()
+#     return _dotmm_vec(x,y,out)
+    
+    
+# #
+# @guvectorize([(NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:])],"(n,n,k,k),(n,n,k,k)->(n,n,k,k)", cache = NUMBA_CACHE, fastmath = NUMBA_FASTMATH)        
+# def bdotmm3(m1,m2, out):
+#     """Performs a dot product of two nxn block matrices of blocks 4x4.
+#     Matrices must be of shape nxnx4x4 that describe two mxm matrices
+#     (m = 4*n) of blocks of size 4x4
+#     """
+#     assert m1.shape[3] == 4
+    
+#     tmp = np.empty(out.shape[2:],out.dtype)
+
+#     n = m1.shape[0]    
+#     for i in prange(n):
+#         for j in range(n):
+#             for k in range(n):
+#                 if k == 0:
+#                     _dotmm4(m1[i,k], m2[k,j], out[i,j] )
+#                 else:
+#                     _dotmm4(m1[i,k], m2[k,j], tmp)
+#                     out[i,j] += tmp
+
+# @njit([(NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:],NCDTYPE[:,:,:,:])], parallel = NUMBA_PARALLEL)        
+# def bdotmm2(m1,m2, out):
+#     """Performs a dot product of two nxn block matrices of blocks 4x4.
+#     Matrices must be of shape nxnx4x4 that describe two mxm matrices
+#     (m = 4*n) of blocks of size 4x4
+#     """
+#     assert m1.shape[3] == 4
+    
+#     tmp = np.empty(out.shape[2:],out.dtype)
+
+#     n = m1.shape[0]    
+#     for i in prange(n):
+#         for j in range(n):
+#             for k in range(n):
+#                 if k == 0:
+#                     _dotmm4(m1[i,k], m2[k,j], out[i,j] )
+#                 else:
+#                     _dotmm4(m1[i,k], m2[k,j], tmp)
+#                     out[i,j] += tmp
 
 
 def bdotmm(m1,m2, out = None):
@@ -1109,9 +1123,12 @@ def bdotmm(m1,m2, out = None):
         out = np.empty(shape = m1.shape, dtype = CDTYPE)
         
     tmp = np.empty(shape = m1.shape, dtype = CDTYPE)
-
     for j in range(m1.shape[0]):
-        dotmm(m1[j][:,None,:,:],m2, out = tmp)
+        # for some reason it is much more efficient to copy. This may be resolved in future numba versions.
+        # TODO: inspect this issue and file a bug report
+        b = np.broadcast_to(m1[j][:,None,:,:],m2.shape).copy()
+        dotmm(b,m2, out = tmp)
+        #dotmm(m1[j][:,None,:,:],m2, out = tmp)
         out[j] = tmp.sum(-4, out = out[j])
     return out
 
@@ -1176,29 +1193,21 @@ def _bdotdm_ref(d,m):
     return out
 
 
-def bdotmv(m,v, out = None):
-    """Performs a dot product of two nxn block matrices of blocks 4x4.
-    The second matrix is block diagonal matrix of shape nx4x4,
-    The first matrix must be of shape nxnx4x4 that describe two mxm matrices
-    (m = 4*n) of blocks of size 4x4.
-    """
-    tmp = dotmv(m,v)
-    return tmp.sum(-2, out = out)
+# def bdotmv(m,v, out = None):
+#     """
+#     """
+#     tmp = dotmv(m,v)
+#     return tmp.sum(-2, out = out)
 
 
-def _bdotmv_ref(m,v):
-    """Performs a dot product of two nxn block matrices of blocks 4x4.
-    Matrices must be of shape nxnx4x4 that describe two mxm matrices
-    (m = 4*n) of blocks of size 4x4
-    """
-    
-    m = np.moveaxis(m,-2,-3).copy()
-    shape = v.shape
-    m = m.reshape(m.shape[0]*4,m.shape[0]*4).copy()
-    v = v.reshape(v.shape[0]*4).copy()
-    out = dotmv(m,v).copy()
-    out = out.reshape(shape).copy()
-    return out
+# def _bdotmv_ref(m,v):    
+#     m = np.moveaxis(m,-2,-3).copy()
+#     shape = v.shape
+#     m = m.reshape(m.shape[0]*4,m.shape[0]*4).copy()
+#     v = v.reshape(v.shape[0]*4).copy()
+#     out = dotmv(m,v).copy()
+#     out = out.reshape(shape).copy()
+#     return out
 
 
 
@@ -1255,8 +1264,8 @@ def multi_dot(arrays,  axis = 0, reverse = False):
     if axis != 0:
         arrays = np.asarray(arrays)
         indices = range(arrays.shape[axis])
-        arrays = np.rollaxis(arrays, axis)
-        #arrays = np.moveaxis(arrays, axis)
+        #arrays = np.rollaxis(arrays, axis)
+        arrays = np.moveaxis(arrays, axis, 0)
     else:
         indices = range(len(arrays))
     if reverse == True:

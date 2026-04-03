@@ -133,7 +133,7 @@ def fft_mask_full(shape, k0, n, betax_off = 0., betay_off = 0., betamax = BETAMA
 @cached_result
 def fft_mask(shape, k0, n, betax_off = 0., betay_off = 0., betamax = BETAMAX):
     windows, (bs,ps) = fft_mask_full(shape, k0, n, betax_off, betay_off, betamax)
-    zero = np.asarray([np.alltrue(w == 0.) for w in windows])
+    zero = np.asarray([np.all(w == 0.) for w in windows])
     nonzero = np.logical_not(zero)
     
     return windows[nonzero], (bs[nonzero], ps[nonzero])

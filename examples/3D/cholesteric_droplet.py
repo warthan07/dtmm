@@ -16,7 +16,7 @@ returns the nearest eigenwave mode.
 import dtmm
 import numpy as np
 
-dtmm.conf.set_verbose(1)
+dtmm.conf.set_verbose(2)
 dtmm.conf.set_betamax(0.9)
 
 #: pixel size in nm
@@ -60,3 +60,5 @@ viewer3 = dtmm.field_viewer(field_data_in, mode = "r", n = 1.5, polarization_mod
 fig3,ax3 = viewer3.plot()
 ax3.set_title("Reflected field")
 
+import matplotlib.pyplot as plt
+plt.show()

@@ -10,7 +10,7 @@ Also, for mkl_fft and scipy, the computation can be performed in parallel using 
 """
 from __future__ import absolute_import, print_function, division
 
-from dtmm.conf import DTMMConfig, CDTYPE, MKL_FFT_INSTALLED, SCIPY_INSTALLED, PYFFTW_INSTALLED
+from dtmm.conf import DTMMConfig, CDTYPE, MKL_FFT_INSTALLED, SCIPY_INSTALLED, PYFFTW_INSTALLED, MLX_INSTALLED
 import numpy as np
 
 import numpy.fft as npfft
@@ -27,6 +27,9 @@ if SCIPY_INSTALLED:
     
 if PYFFTW_INSTALLED:
     import pyfftw
+    
+if MLX_INSTALLED:
+    import mlx.core as mx
 
 
 POOL = {}
@@ -238,6 +241,34 @@ def _fftw_fft2(a, out = None):
     fft(a,out)    
     return out
 
+def _mlx_fft2(a, out = None):
+    if a.data.c_contiguous == False:
+        a = mx.array(a.copy())
+    else:
+        a = mx.array(a)
+    b = mx.fft.fft2(a)
+    mx.eval(b)
+    
+    if out is None:
+        return np.asarray(b)
+    else:
+        out[...] = b
+        return out
+    
+def _mlx_ifft2(a, out = None):
+    if a.data.c_contiguous == False:
+        a = mx.array(a.copy())
+    else:
+        a = mx.array(a)
+    b = mx.fft.ifft2(a)
+    mx.eval(b)
+    
+    if out is None:
+        return np.asarray(b)
+    else:
+        out[...] = b
+        return out
+
 def _fftw_ifft2(a, out = None):
     planner = FFTW_PLANNERS.get(DTMMConfig.fft_planner, "FFTW_MEASURE")
     if out is None:
@@ -299,6 +330,8 @@ def fft2(a, out = None):
         return _np_fft2(a, out) 
     elif libname == "pyfftw":
         return _fftw_fft2(a, out)   
+    elif libname == "mlx":
+        return _mlx_fft2(a, out)   
     else:#default implementation is numpy
         return _np_fft2(a, out) 
 
@@ -331,6 +364,8 @@ def ifft2(a, out = None):
         return _np_ifft2(a, out)  
     elif libname == "pyfftw":
         return _fftw_ifft2(a, out) 
+    elif libname == "mlx":
+        return _mlx_ifft2(a, out) 
     else: #default implementation is numpy
         return _np_ifft2(a, out)   
 
@@ -362,6 +397,10 @@ def mfft2(a, overwrite_x = False):
         return npfft.fft2(a, axes = (-4,-3))
     elif libname == "pyfftw":
         return pyfftw.interfaces.scipy_fft.fft2(a, axes = (-4,-3), overwrite_x = overwrite_x)
+    elif libname == "mlx":
+        out = mx.fft.fft2(mx.array(a),axes = (-4,-3))
+        mx.eval(out)
+        return out
     else: #default implementation is numpy
         return npfft.fft2(a, axes = (-4,-3))
 
@@ -392,6 +431,10 @@ def mifft2(a, overwrite_x = False):
         return npfft.ifft2(a, axes = (-4,-3))
     elif libname == "pyfftw":
         return pyfftw.interfaces.scipy_fft.ifft2(a, axes = (-4,-3), overwrite_x = overwrite_x)
+    elif libname == "mlx":
+        out = mx.fft.ifft2(mx.array(a),axes = (-4,-3))
+        mx.eval(out)
+        return out
     else: #default implementation is numpy
         return npfft.ifft2(a, axes = (-4,-3))    
     
@@ -422,6 +465,10 @@ def mfft(a, overwrite_x = False):
         return npfft.fft(a, axis = -3)
     elif libname == "pyfftw":
         return pyfftw.interfaces.scipy_fft.fft(a, axis = -3, overwrite_x = overwrite_x)
+    elif libname == "mlx":
+        out = mx.fft.fft(mx.array(a),axis = -3)
+        mx.eval(out)
+        return out
     else: #default implementation is numpy
         return npfft.fft(a, axis = -3)
     
@@ -452,6 +499,10 @@ def fft(a, overwrite_x = False):
         return npfft.fft(a)
     elif libname == "pyfftw":
         return pyfftw.interfaces.scipy_fft.fft(a, overwrite_x = overwrite_x)
+    elif libname == "mlx":
+        out = mx.fft.fft(mx.array(a))
+        mx.eval(out)
+        return out
     else: #default implementation is numpy
         return npfft.fft(a)
     
@@ -482,5 +533,9 @@ def ifft(a, overwrite_x = False):
         return npfft.ifft(a)
     elif libname == "pyfftw":
         return pyfftw.interfaces.scipy_fft.ifft(a, overwrite_x = overwrite_x)
+    elif libname == "mlx":
+        out = mx.fft.ifft(mx.array(a))
+        mx.eval(out)
+        return out
     else: #default implementation is numpy
         return npfft.ifft(a)
